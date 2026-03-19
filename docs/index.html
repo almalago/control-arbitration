@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mechanistic Foundations of Goal-Directed Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --blue: #0a3080; --blue-light: #dde4f5;
+  --text: #1a1a1a; --text2: #555; --border: #ddd;
+  --bg: #f5f2ee; --card: #ffffff; --max: 900px;
+  --shadow: 0 2px 16px rgba(0,0,0,0.09);
+}
+body { font-family: 'Inter', sans-serif; font-size: 16px; line-height: 1.7; color: var(--text); background: var(--bg); }
+
+nav {
+  position: sticky; top: 0; background: rgba(245,242,238,0.93);
+  backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 100; padding: 0 2rem;
+}
+.nav-inner { max-width: var(--max); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 52px; }
+.nav-logos { display: flex; align-items: flex-end; gap: 1.2rem; }
+.nav-logos img { height: 22px; width: auto; filter: grayscale(1); opacity: .5; transition: opacity .2s; }
+.nav-logos img.upv { height: 46px; }
+.nav-logos img:hover { opacity: .8; }
+nav ul { list-style: none; display: flex; gap: 2rem; }
+nav a { text-decoration: none; color: var(--text2); font-size: .85rem; font-weight: 500; letter-spacing: .02em; transition: color .15s; }
+nav a:hover { color: var(--blue); }
+
+.hero { max-width: var(--max); margin: 0 auto; padding: 5rem 2rem 2.5rem; }
+.hero h1 { font-size: 2rem; font-weight: 600; line-height: 1.25; letter-spacing: -.02em; margin-bottom: 1.2rem; }
+.hero .authors { font-size: .95rem; color: var(--text2); margin-bottom: .3rem; }
+.hero .affil { font-size: .82rem; color: #888; margin-bottom: 2rem; }
+
+.badges { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
+.badge {
+  display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .85rem;
+  border: 1.5px solid var(--blue); border-radius: 5px; font-size: .82rem; font-weight: 500;
+  color: var(--blue); text-decoration: none; background: var(--card);
+  box-shadow: var(--shadow); transition: background .15s, color .15s;
+}
+.badge:hover { background: var(--blue); color: #fff; }
+.badge.sec { border-color: var(--border); color: var(--text2); }
+.badge.sec:hover { background: var(--text); color: #fff; border-color: var(--text); }
+
+.tldr {
+  background: #ece9e4; border-radius: 8px;
+  padding: 1.1rem 1.4rem; font-size: .95rem;
+}
+.tldr strong { color: var(--text); }
+
+.card {
+  background: var(--card); border-radius: 12px; box-shadow: var(--shadow);
+  max-width: var(--max); margin: 0 auto 2rem; padding: 2.5rem 2rem;
+}
+.card h2 { font-size: .9rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text2); margin-bottom: 1.5rem; }
+p { margin-bottom: 1rem; color: var(--text2); }
+p:last-child { margin-bottom: 0; }
+
+/* k buttons */
+.ctrl { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.ctrl label { font-size: .85rem; font-weight: 500; color: var(--text2); }
+.k-btns { display: flex; gap: .35rem; }
+.k-btn {
+  min-width: 40px; padding: .28rem .5rem; border: 1.5px solid var(--border);
+  border-radius: 5px; background: var(--bg); font-family: 'JetBrains Mono', monospace;
+  font-size: .82rem; cursor: pointer; transition: all .15s; color: var(--text2);
+}
+.k-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+.k-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.k-btn.optimal { position: relative; }
+.k-btn.optimal.active::after {
+  content: '★'; position: absolute; top: -9px; right: -5px;
+  font-size: .6rem; color: #e8a020; background: var(--card);
+  border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;
+}
+/* unified per-k info badge */
+.k-info {
+  display: none; align-items: center; gap: .4rem; padding: .22rem .65rem;
+  border-radius: 5px; font-size: .75rem; font-weight: 500; border: 1.5px solid;
+}
+.k-info.show { display: flex; }
+.k-info.dead     { background:#f4f4f4; border-color:#bbb; color:#666; }
+.k-info.thresh   { background:#fff8e0; border-color:#d4960a; color:#7a5800; }
+.k-info.emerging { background:#ffefd0; border-color:#d07a10; color:#7a4500; }
+.k-info.optimal  { background:#eef2fd; border-color:#0a3080; color:#0a3080; }
+.k-info.marginal { background:#fff3e8; border-color:#d4740a; color:#7a3a00; }
+.k-info.saturated{ background:#fdecea; border-color:#c0392b; color:#7f1d1d; }
+
+
+/* phase k-btn color variants */
+.k-btn.marginal:hover  { border-color: #d4740a; color: #d4740a; background: #fff3e8; }
+.k-btn.marginal.active { background: #d4740a; border-color: #d4740a; color: #fff; }
+.k-btn.saturated:hover { border-color: #c0392b; color: #c0392b; background: #fdecea; }
+.k-btn.saturated.active { background: #c0392b; border-color: #c0392b; color: #fff; }
+
+/* canvas */
+.canvas-wrap { position: relative; }
+canvas { width: 100%; border-radius: 8px; display: block; background: #fff; }
+
+.formula {
+  font-family: 'JetBrains Mono', monospace; font-size: .88rem; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 6px; padding: .7rem 1rem;
+  margin: 1rem 0; text-align: center; color: var(--text);
+}
+
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0; }
+.c-panel { text-align: center; }
+.c-panel canvas { border-radius: 8px; width: 100%; }
+.c-panel .cap { font-size: .8rem; color: #888; margin-top: .5rem; line-height: 1.4; }
+.c-panel .cap strong { color: var(--text); }
+
+.findings { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; margin: 1.5rem 0; }
+.finding { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.2rem; }
+.finding .lbl { font-size: .68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); margin-bottom: .25rem; }
+.finding .val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 500; color: var(--text); line-height: 1.2; }
+.finding .desc { font-size: .78rem; color: #888; margin-top: .2rem; }
+
+.legend { display: flex; gap: 1.5rem; margin-top: .6rem; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--text2); }
+
+/* affiliation logos */
+.logos { display: flex; align-items: center; gap: 1.6rem; margin: .9rem 0 2rem; flex-wrap: wrap; }
+.logos img { height: 28px; width: auto; filter: grayscale(1); opacity: .55; transition: opacity .2s; }
+.logos img:hover { opacity: .85; }
+
+/* hero narrative */
+.story { max-width: 800px; margin-top: .5rem; }
+.story-q { font-size: 1rem; color: var(--text); font-weight: 600; margin-bottom: 1.4rem; line-height: 1.5; padding: .75rem 1rem; background: #f0ede8; border-radius: 8px; display: inline-block; box-shadow: 0 1px 10px rgba(0,0,0,0.09); }
+.story-steps { display: flex; flex-direction: column; gap: .65rem; margin-bottom: 1.25rem; }
+.sstep { display: flex; gap: .85rem; align-items: flex-start; font-size: .94rem; color: #444; line-height: 1.75; }
+.sstep strong { color: var(--text); }
+.snum { min-width: 21px; height: 21px; border-radius: 50%; background: var(--blue); color: #fff; font-size: .7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: .3rem; flex-shrink: 0; }
+.key-box { background: #ece9e4; border-radius: 8px; padding: .95rem 1.25rem; font-size: .93rem; color: var(--text); line-height: 1.75; border-left: 3px solid var(--blue); }
+
+pre {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: .82rem;
+  line-height: 1.6; overflow-x: auto; color: var(--text);
+}
+
+/* lightbox */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 1000; justify-content: center; align-items: center; cursor: zoom-out; }
+.overlay.active { display: flex; }
+.overlay canvas, .overlay img { max-width: 92vw; max-height: 90vh; border-radius: 6px; }
+
+/* reveal */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 1.4rem; }
+  .findings, .compare { grid-template-columns: 1fr; }
+  nav ul { gap: 1rem; }
+  .card { padding: 1.5rem 1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <ul>
+      <li><a href="#ema">phase transition</a></li>
+      <li><a href="#phase">arbitration</a></li>
+      <li><a href="#ablation">ema ablation</a></li>
+      <li><a href="#citation">cite</a></li>
+    </ul>
+    <div class="nav-logos">
+      <img src="logos/logo-csic.png" alt="CSIC">
+      <img src="logos/logo-upvehu.png" alt="UPV/EHU" class="upv">
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Mechanistic Foundations of Goal-Directed Control</h1>
+  <p class="authors">Alma Lago</p>
+  <p class="affil">Cajal Neuroscience Center (CSIC) &nbsp;·&nbsp; University of the Basque Country (UPV/EHU)</p>
+  <div class="badges">
+    <a class="badge" href="https://arxiv.org/abs/2603.15248" target="_blank">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      arXiv:2603.15248
+    </a>
+    <a class="badge sec" href="https://github.com/almalago/goal-tracking-env" target="_blank">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      code
+    </a>
+  </div>
+  <div class="story">
+    <p class="story-q">how do competing control strategies emerge, compete, and get resolved during learning?</p>
+    <div class="story-steps">
+      <div class="sstep">
+        <span class="snum">1</span>
+        <div><strong>two routes, one task.</strong> a learning agent faces motor tasks with varying demands. two control strategies compete: a reactive route (respond to the present) and a prospective route (anticipate the future). task demand determines which route is reliable.</div>
+      </div>
+      <div class="sstep">
+        <span class="snum">2</span>
+        <div><strong>a gate arbitrates.</strong> an attention mechanism reads the training history and routes control, converging toward theoretically motivated confidence thresholds. <strong style="color:var(--blue)">this gate is the central object of study.</strong></div>
+      </div>
+      <div class="sstep">
+        <span class="snum">3</span>
+        <div><strong>one parameter decides.</strong> context window <em>k</em>, not network depth, determines whether the gate forms at all. below <em>k</em> ≤ 4 no arbitration emerges. above <em>k</em> ≥ 8, confidence scales as log <em>k</em>. the transition shows a clear two-phase structure: a dead zone, then an abrupt breakthrough.</div>
+      </div>
+      <div class="sstep">
+        <span class="snum">4</span>
+        <div><strong>a diagnostic, not a replacement.</strong> commitment dynamics are well described by a closed-form EMA. this models the rate of commitment analytically, but cannot reproduce the arbitration itself. where experimental curves are noisy and ambiguous, the analytical surrogate provides a clean theoretical reference.</div>
+      </div>
+    </div>
+    <div class="key-box">
+      these are circuit-level phase transition signatures of the same kind found in transformer induction heads (<a href="https://arxiv.org/pdf/2209.11895" target="_blank" style="color:var(--blue)">Olsson et al., 2022</a>), extending mechanistic interpretability beyond sequence prediction to embodied control architectures.
+    </div>
+  </div>
+</div>
+
+<!-- EMA EXPLORER -->
+<div class="card reveal" id="ema">
+  <h2>phase transition dynamics</h2>
+  <p style="color:#aaa;font-size:.88rem;margin-bottom:.4rem">select k and compare the learned gate (navy) against the closed-form EMA prediction (dashed).</p>
+  <p style="color:#777;font-size:.88rem">R² shown top-right quantifies fit quality. at small k, improvement is gradual; at large k, the dynamics slow beyond what 200 post-snap epochs can resolve. k = 32 sits at the crossing point: a clean breakthrough well within the observation window. this distinction between linear improvement and abrupt breakthrough reflects a qualitative difference in circuit formation (<a href="https://arxiv.org/pdf/2502.17356" target="_blank" style="color:var(--blue)">Zhao et al., 2024</a>).</p>
+  <div class="formula">c(t) = c<sub>∞</sub> − (c<sub>∞</sub> − 0.5) · e<sup>−(t−τ<sub>snap</sub>)/k</sup></div>
+  <div class="ctrl">
+    <label>context window k</label>
+    <div class="k-btns" id="ema-k-btns">
+      <button class="k-btn" data-k="1">1</button>
+      <button class="k-btn" data-k="2">2</button>
+      <button class="k-btn" data-k="4">4</button>
+      <button class="k-btn" data-k="8">8</button>
+      <button class="k-btn" data-k="16">16</button>
+      <button class="k-btn optimal" data-k="32">32</button>
+      <button class="k-btn" data-k="64">64</button>
+      <button class="k-btn" data-k="128">128</button>
+      <button class="k-btn saturated" data-k="256">256</button>
+    </div>
+    <div class="k-info" id="ema-k-info"></div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="ema-canvas" height="300"></canvas>
+  </div>
+  <p style="font-size:.78rem;color:#aaa;margin-top:.5rem;text-align:right">note: interpretation is based on the analytical model, not the raw experimental curves</p>
+  <div class="legend">
+    <div class="legend-item">
+      <svg width="22" height="3"><line x1="0" y1="1.5" x2="22" y2="1.5" stroke="#0a3080" stroke-width="2.5"/></svg>
+      learned gate
+    </div>
+    <div class="legend-item">
+      <svg width="22" height="3"><line x1="0" y1="1.5" x2="22" y2="1.5" stroke="#999" stroke-width="2" stroke-dasharray="5,3"/></svg>
+      EMA prediction
+    </div>
+  </div>
+</div>
+
+<!-- PHASE DIAGRAM -->
+<div class="card reveal" id="phase">
+  <h2>control strategy arbitration</h2>
+  <p style="color:#aaa;font-size:.88rem;margin-bottom:.4rem">select k to watch arbitration emerge.</p>
+  <p>the heatmap reveals the learned confidence landscape across task demand and training time. context window <em>k</em> governs whether the gate forms at all. below the threshold (k ≤ 4), no structure appears. above k ≥ 8 the gate begins resolving, with the phase diagram fully resolved at k = 32 ★. at k ≥ 64 gains saturate.</p>
+  <div class="ctrl">
+    <label>context window k</label>
+    <div class="k-btns" id="k-btns">
+      <button class="k-btn" data-k="1">1</button>
+      <button class="k-btn" data-k="2">2</button>
+      <button class="k-btn" data-k="4">4</button>
+      <button class="k-btn" data-k="8">8</button>
+      <button class="k-btn" data-k="16">16</button>
+      <button class="k-btn optimal" data-k="32">32</button>
+      <button class="k-btn marginal" data-k="64">64</button>
+      <button class="k-btn saturated" data-k="128">128</button>
+      <button class="k-btn saturated" data-k="256">256</button>
+    </div>
+    <div class="k-info" id="phase-k-info"></div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="phase-canvas" style="height:320px"></canvas>
+  </div>
+  <p style="font-size:.78rem;color:#aaa;margin-top:.5rem;text-align:right">colorbar scale is global across all k — direct comparison is valid</p>
+</div>
+
+<!-- EMA ABLATION -->
+<div class="card reveal" id="ablation">
+  <h2>ema ablation — why not just use ema?</h2>
+  <p>because ema is blind to task demand. temporal integration alone cannot arbitrate: ema confidence is a function of slot delta norms only — task demand is invisible to it. the result is Δ = 0.0006 versus Δ = 0.192 for the attention gate. ema is useful as a diagnostic model of commitment dynamics, but it cannot implement the arbitration itself. attention is the mechanism that works, and crucially it scales: Δ grows monotonically with k up to saturation at k ≥ 64, consistent with the scaling behaviour observed in transformer-based systems.</p>
+  <div class="compare">
+    <div class="c-panel">
+      <canvas id="cmp-gate" height="220"></canvas>
+      <div class="cap"><strong>attention gate (k=32)</strong><br>Δ = 0.192 · prospective / reactive structure emerges</div>
+    </div>
+    <div class="c-panel">
+      <canvas id="cmp-ema" height="220"></canvas>
+      <div class="cap"><strong>EMA ablation (α = 1/k)</strong><br>Δ = 0.0006 · uniform — task demand invisible</div>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="card reveal">
+  <h2>result summary</h2>
+  <div class="findings">
+    <div class="finding"><div class="lbl">dead zone</div><div class="val">k ≤ 4</div><div class="desc">no arbitration structure forms</div></div>
+    <div class="finding"><div class="lbl">optimal ★</div><div class="val">k = 32</div><div class="desc">Δ = 0.192, phase diagram fully resolved</div></div>
+    <div class="finding"><div class="lbl">saturation</div><div class="val">k ≥ 64</div><div class="desc">Δ ≈ 0.198, diminishing returns</div></div>
+    <div class="finding"><div class="lbl">predicted threshold</div><div class="val">k ≥ K<sub style="font-size:1rem">steps</sub> ≈ 10</div><div class="desc">gate needs full prospective trajectory</div></div>
+  </div>
+  <p style="margin-top:1rem"><strong style="color:var(--blue)">context window k, not network depth, is the binding constraint.</strong></p>
+  <p style="font-size:.85rem;color:#aaa;margin-top:.3rem">the depth ablation (NL ∈ {1,2,3}) shows plateau at NL=2 (Δ: 0.164 → 0.192 → 0.195), confirming k drives the transition.</p>
+</div>
+
+<!-- CITATION -->
+<div class="card reveal" id="citation">
+  <h2>citation</h2>
+  <pre>@misc{lago2026mechanistic,
+  title   = {Mechanistic Foundations of Goal-Directed Control},
+  author  = {Lago, Alma},
+  year    = {2026},
+  eprint  = {2603.15248},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url     = {https://arxiv.org/abs/2603.15248},
+}</pre>
+</div>
+
+<div style="height:3rem"></div>
+
+<!-- lightbox -->
+<div class="overlay" id="overlay"><img id="overlay-img" src="" alt=""></div>
+
+<script src="assets/web_data.js"></script>
+<script>
+// ── colormap: gray → white → blue ─────────────────────────────────────────────
+const VMIN = 0.40, VMAX = 0.62;
+function colormapRGB(v) {
+  const t = Math.max(0, Math.min(1, (v - VMIN) / (VMAX - VMIN)));
+  const wp = (0.50 - VMIN) / (VMAX - VMIN); // ~0.45
+  let r, g, b;
+  if (t < wp) {
+    const s = t / wp;
+    r = 170 + (255-170)*s; g = 170 + (255-170)*s; b = 170 + (255-170)*s;
+  } else {
+    const s = (t - wp) / (1 - wp);
+    r = 255 + (10-255)*s; g = 255 + (48-255)*s; b = 255 + (128-255)*s;
+  }
+  return [Math.round(r), Math.round(g), Math.round(b)];
+}
+
+// ── render phase heatmap on a canvas ──────────────────────────────────────────
+// PAD = {top, right, bottom, left} for axis area
+const PAD_P = {top:14, right:80, bottom:38, left:52};
+
+function renderPhase(canvas, matrix, tdVals, nEpochs, warmEp, revealFrac, opts={}) {
+  const DPR = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth || 760;
+  const cssH = canvas.clientHeight || 220;
+  const PW = Math.round(cssW * DPR);
+  const PH = Math.round(cssH * DPR);
+  if (canvas.width !== PW || canvas.height !== PH) { canvas.width = PW; canvas.height = PH; }
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, PW, PH);
+
+  // All layout in CSS pixels, then scale once for drawing
+  const P = opts.noColorbar ? {...PAD_P, right:8} : PAD_P;
+  const cW = cssW - P.left - P.right;  // plot area CSS px
+  const cH = cssH - P.top  - P.bottom;
+  const nTd = matrix.length;
+  const X_START = Math.max(0, warmEp - 30);
+  const totalCols = nEpochs - X_START;
+
+  // ── heatmap via ImageData — bilinear interpolation, native DPR resolution ─
+  const iW = Math.round(cW * DPR);
+  const iH = Math.round(cH * DPR);
+  const imgData = ctx.createImageData(iW, iH);
+  for (let py = 0; py < iH; py++) {
+    // bilinear: map pixel row → fractional td row index
+    const rowF = (py / iH) * nTd;
+    const r0 = Math.min(Math.floor(rowF), nTd - 1);
+    const r1 = Math.min(r0 + 1, nTd - 1);
+    const rAlpha = rowF - r0;
+    for (let col = 0; col < iW; col++) {
+      const epochIdx = X_START + Math.round(col * totalCols / iW);
+      const inReveal = (col / iW) < revealFrac;
+      let rgb;
+      if (!inReveal) {
+        rgb = [245, 242, 238];
+      } else {
+        const v0 = matrix[r0]?.[epochIdx] ?? 0.5;
+        const v1 = matrix[r1]?.[epochIdx] ?? 0.5;
+        rgb = colormapRGB(v0 * (1 - rAlpha) + v1 * rAlpha);
+      }
+      const base = (py * iW + col) * 4;
+      imgData.data[base] = rgb[0]; imgData.data[base+1] = rgb[1];
+      imgData.data[base+2] = rgb[2]; imgData.data[base+3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, Math.round(P.left * DPR), Math.round(P.top * DPR));
+
+  // ── vector overlay in CSS-pixel space (scale once) ───────────────────────
+  ctx.save();
+  ctx.scale(DPR, DPR);
+
+  const xOf = ep => P.left + ((ep - X_START) / totalCols) * cW;
+  const yOfRow = row => P.top + (row + 0.5) * cH / nTd;
+
+  // τ snap
+  const snapX = xOf(warmEp);
+  ctx.strokeStyle = '#bbb'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(snapX, P.top); ctx.lineTo(snapX, P.top + cH); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // x grid + ticks
+  [50, 100, 150, 200, 250, 300].filter(e => e > X_START && e <= nEpochs).forEach(ep => {
+    const x = xOf(ep);
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.moveTo(x, P.top); ctx.lineTo(x, P.top + cH); ctx.stroke();
+    ctx.fillStyle = '#888'; ctx.font = `${10}px JetBrains Mono,monospace`; ctx.textAlign = 'center';
+    ctx.fillText(ep, x, P.top + cH + 14);
+  });
+
+  // y ticks
+  [{td:0,label:'0'},{td:0.44,label:'0.5'},{td:0.88,label:'1'}].forEach(({td, label}) => {
+    const ri = tdVals.reduce((b,t,i) => Math.abs(t-td)<Math.abs(tdVals[b]-td)?i:b, 0);
+    const y = yOfRow(ri);
+    ctx.fillStyle = '#888'; ctx.font = `${10}px JetBrains Mono,monospace`; ctx.textAlign = 'right';
+    ctx.fillText(label, P.left - 5, y + 3.5);
+  });
+
+  // axis labels
+  ctx.fillStyle = '#555'; ctx.font = `${12}px Inter,sans-serif`; ctx.textAlign = 'center';
+  ctx.fillText('Training epochs', P.left + cW / 2, cssH - 3);
+  ctx.save(); ctx.translate(12, P.top + cH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Task demand', 0, 0); ctx.restore();
+
+  // colorbar (omit for compact comparison panels)
+  if (!opts.noColorbar) {
+    const cbX = P.left + cW + 8, cbW = 12, cbH = cH;
+    const cbGrad = ctx.createLinearGradient(0, P.top, 0, P.top + cbH);
+    cbGrad.addColorStop(0,    'rgb(10,48,128)');
+    cbGrad.addColorStop(0.55, 'rgb(255,255,255)');
+    cbGrad.addColorStop(1,    'rgb(170,170,170)');
+    ctx.fillStyle = cbGrad;
+    ctx.beginPath(); ctx.roundRect(cbX, P.top, cbW, cbH, 2); ctx.fill();
+    ctx.strokeStyle = '#ccc'; ctx.lineWidth = .7; ctx.strokeRect(cbX, P.top, cbW, cbH);
+    ctx.fillStyle = '#666'; ctx.font = `${9.5}px Inter,sans-serif`; ctx.textAlign = 'left';
+    ctx.fillText('Prospective', cbX + cbW + 4, P.top + 9);
+    ctx.fillText('Reactive', cbX + cbW + 4, P.top + cbH);
+  }
+
+  ctx.restore();
+}
+
+// ── phase animation ────────────────────────────────────────────────────────────
+let phaseAnim = null;
+let currentK = 1;
+
+function animatePhase(k) {
+  if (phaseAnim) cancelAnimationFrame(phaseAnim);
+  const data = PHASE_DATA[String(k)];
+  if (!data) return;
+  const canvas = document.getElementById('phase-canvas');
+  const DURATION = 1400; // ms
+  const start = performance.now();
+
+  function frame(now) {
+    const frac = Math.min(1, (now - start) / DURATION);
+    const ease = 1 - Math.pow(1 - frac, 2); // ease-out quad
+    renderPhase(canvas, data.matrix, data.td_values, data.n_epochs, data.warm_ep, ease);
+    if (frac < 1) phaseAnim = requestAnimationFrame(frame);
+  }
+  phaseAnim = requestAnimationFrame(frame);
+}
+
+const K_INFO = {
+  1:   { cls: 'dead',     text: '✕ dead zone · no arbitration · Δ = 0.002' },
+  2:   { cls: 'dead',     text: '✕ dead zone · no arbitration · Δ = 0.004' },
+  4:   { cls: 'dead',     text: '✕ dead zone · no arbitration · Δ = 0.010' },
+  8:   { cls: 'thresh',   text: '▲ threshold · weak arbitration · Δ = 0.045' },
+  16:  { cls: 'emerging', text: '● emerging · partial arbitration · Δ = 0.113' },
+  32:  { cls: 'optimal',  text: '★ optimal · Δ = 0.192 · breakthrough pattern' },
+  64:  { cls: 'marginal', text: '◆ marginal gain · Δ = 0.195' },
+  128: { cls: 'saturated',text: '◆ saturated · Δ = 0.197' },
+  256: { cls: 'saturated',text: '◆ saturated · Δ = 0.198' },
+};
+
+document.getElementById('k-btns').addEventListener('click', e => {
+  const btn = e.target.closest('.k-btn');
+  if (!btn) return;
+  const k = parseInt(btn.dataset.k);
+  currentK = k;
+  document.querySelectorAll('#k-btns .k-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const info = K_INFO[k];
+  const badge = document.getElementById('phase-k-info');
+  badge.className = 'k-info show ' + (info ? info.cls : '');
+  badge.textContent = info ? info.text : '';
+  animatePhase(k);
+});
+
+// ── EMA line chart ────────────────────────────────────────────────────────────
+const PAD_E = {top:20, right:24, bottom:42, left:52};
+
+function drawEMA(k) {
+  const s = EMA_DATA.series[String(k)];
+  if (!s) return;
+  const canvas = document.getElementById('ema-canvas');
+  const DPR = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 760;
+  const H = canvas.clientHeight || 300;
+  if (canvas.width !== W*DPR || canvas.height !== H*DPR) {
+    canvas.width = W*DPR; canvas.height = H*DPR;
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  const P = PAD_E;
+  const plotW = W - P.left - P.right;
+  const plotH = H - P.top - P.bottom;
+  const n = s.learned.length;
+  const tauSnap = EMA_DATA.tau_snap;
+  const ymin = 0.45, ymax = 1.0;
+
+  // Linear x-scale: show PRE_EPOCHS before snap + full committed part
+  const PRE = 8;
+  const tStart = tauSnap - PRE;   // first epoch shown
+  const tEnd   = n - 1;           // last epoch shown
+  const tTotal = tEnd - tStart;
+  const xOf = i => P.left + ((i - tStart) / tTotal) * plotW;
+  const yOf = v => P.top + plotH - ((v - ymin) / (ymax - ymin)) * plotH;
+
+  // background: clean white
+  const snapX = xOf(tauSnap);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(P.left, P.top, plotW, plotH);
+
+  // grid
+  ctx.strokeStyle = '#e8e4de'; ctx.lineWidth = .7;
+  [0.5, 0.6, 0.7, 0.8, 0.9, 1.0].forEach(v => {
+    if (v < ymin || v > ymax) return;
+    ctx.beginPath(); ctx.moveTo(P.left, yOf(v)); ctx.lineTo(P.left + plotW, yOf(v)); ctx.stroke();
+  });
+
+  // tau snap vertical line — light gray
+  ctx.strokeStyle = '#bbb'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(snapX, P.top); ctx.lineTo(snapX, P.top + plotH); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // chance line
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(P.left, yOf(0.5)); ctx.lineTo(P.left + plotW, yOf(0.5)); ctx.stroke();
+
+  // EMA prediction (dashed gray) — only post-snap
+  ctx.strokeStyle = '#999'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+  ctx.beginPath(); let started = false;
+  for (let i = tauSnap; i < n; i++) {
+    const v = s.ema_pred[i];
+    if (v === null) { started = false; continue; }
+    if (!started) { ctx.moveTo(xOf(i), yOf(v)); started = true; }
+    else ctx.lineTo(xOf(i), yOf(v));
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // learned gate (navy blue) — from PRE epochs before snap
+  ctx.strokeStyle = '#0a3080'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = tStart; i < n; i++) {
+    const v = s.learned[i];
+    if (i === tStart) ctx.moveTo(xOf(i), yOf(v));
+    else ctx.lineTo(xOf(i), yOf(v));
+  }
+  ctx.stroke();
+
+  // c_inf annotation
+  const cinfY = yOf(s.c_inf);
+  ctx.strokeStyle = '#cc5533'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(P.left + plotW - 80, cinfY); ctx.lineTo(P.left + plotW, cinfY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#cc5533'; ctx.textAlign = 'right'; ctx.font = '12px JetBrains Mono,monospace';
+  ctx.fillText(`c∞=${s.c_inf.toFixed(3)}`, P.left + plotW, cinfY - 14);
+
+  // R² annotation top-right
+  const r2 = s.r2 ?? null;
+  if (r2 !== null) {
+    const r2color = r2 > 0.9 ? '#0a3080' : r2 >= 0 ? '#888' : '#c0392b';
+    ctx.fillStyle = r2color; ctx.textAlign = 'right'; ctx.font = '11px JetBrains Mono,monospace';
+    ctx.fillText(`R²=${r2.toFixed(3)}`, P.left + plotW, P.top + 14);
+  }
+
+  // axes labels
+  ctx.fillStyle = '#555'; ctx.font = '12px Inter,sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('epochs since τ snap', P.left + plotW / 2, H - 4);
+  ctx.save(); ctx.translate(13, P.top + plotH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Confidence', 0, 0); ctx.restore();
+
+  // y ticks
+  ctx.textAlign = 'right'; ctx.font = '10px JetBrains Mono,monospace'; ctx.fillStyle = '#888';
+  [0.5, 0.6, 0.7, 0.8, 0.9, 1.0].forEach(v => {
+    if (v < ymin || v > ymax) return;
+    ctx.fillText(v.toFixed(1), P.left - 5, yOf(v) + 4);
+  });
+
+  // x ticks (epochs relative to tauSnap)
+  ctx.textAlign = 'center'; ctx.fillStyle = '#888'; ctx.font = '10px JetBrains Mono,monospace';
+  [-PRE, 0, 25, 50, 75, 100, 125, 150, 175, 200].filter(t => t < n - tauSnap).forEach(t => {
+    const x = xOf(tauSnap + t);
+    ctx.fillText(String(t), x, P.top + plotH + 16);
+  });
+}
+
+const K_INFO_EMA = {
+  1:   { cls: 'dead',     text: '↓ no phase transition · stiff rise · R² = −0.327' },
+  2:   { cls: 'dead',     text: '↓ no phase transition · stiff rise · R² = −0.206' },
+  4:   { cls: 'dead',     text: '↓ no phase transition · stiff rise · R² = −0.332' },
+  8:   { cls: 'thresh',   text: '▲ weak transition · marginal fit · R² = 0.148' },
+  16:  { cls: 'emerging', text: '● transition emerging · moderate fit · R² = 0.730' },
+  32:  { cls: 'optimal',  text: '★ best fit · breakthrough · R² = 0.981' },
+  64:  { cls: 'marginal', text: '◆ transition slows · fit degrades · R² = 0.405' },
+  128: { cls: 'saturated',text: '↑ continual improvement · k exceeds observation window · R² = −1.387' },
+  256: { cls: 'saturated',text: '↑ monotonic · linear growth · k ≫ observation window · R² = −34.1' },
+};
+
+document.getElementById('ema-k-btns').addEventListener('click', e => {
+  const btn = e.target.closest('.k-btn');
+  if (!btn) return;
+  document.querySelectorAll('#ema-k-btns .k-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const k = parseInt(btn.dataset.k);
+  const info = K_INFO_EMA[k];
+  const badge = document.getElementById('ema-k-info');
+  badge.className = 'k-info show ' + (info ? info.cls : '');
+  badge.textContent = info ? info.text : '';
+  drawEMA(k);
+});
+
+// ── comparison canvases (static, k=32 gate vs EMA ablation) ──────────────────
+function renderComparePhase(canvasId, matrix, tdVals, nEpochs, warmEp) {
+  const canvas = document.getElementById(canvasId);
+  renderPhase(canvas, matrix, tdVals, nEpochs, warmEp, 1.0, {noColorbar: true});
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+function init() {
+  // ema: start at k=32
+  document.querySelector('#ema-k-btns [data-k="32"]').click();
+  // phase: start at k=1
+  document.querySelector('#k-btns [data-k="1"]').click();
+
+  // comparison panels
+  const d32 = PHASE_DATA['32'];
+  renderComparePhase('cmp-gate', d32.matrix, d32.td_values, d32.n_epochs, d32.warm_ep);
+
+  // EMA ablation: flat matrix (all ~0.501)
+  const flatMatrix = d32.td_values.map(() => Array(d32.n_epochs).fill(0.501));
+  renderComparePhase('cmp-ema', flatMatrix, d32.td_values, d32.n_epochs, d32.warm_ep);
+}
+
+// wait for layout
+if (document.readyState === 'complete') init();
+else window.addEventListener('load', init);
+
+window.addEventListener('resize', () => {
+  if (PHASE_DATA) {
+    const data = PHASE_DATA[String(currentK)];
+    if (data) renderPhase(document.getElementById('phase-canvas'), data.matrix, data.td_values, data.n_epochs, data.warm_ep, 1.0);
+    drawEMA(parseInt(document.querySelector('#ema-k-btns .k-btn.active')?.dataset.k||32));
+    const d32 = PHASE_DATA['32'];
+    renderComparePhase('cmp-gate', d32.matrix, d32.td_values, d32.n_epochs, d32.warm_ep);
+    const flat = d32.td_values.map(()=>Array(d32.n_epochs).fill(0.501));
+    renderComparePhase('cmp-ema', flat, d32.td_values, d32.n_epochs, d32.warm_ep);
+  }
+});
+
+// ── scroll reveal ─────────────────────────────────────────────────────────────
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
+},{threshold:.08});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
