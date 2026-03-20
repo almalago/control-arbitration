@@ -135,6 +135,53 @@ canvas { width: 100%; border-radius: 8px; display: block; background: #fff; }
 .snum { min-width: 21px; height: 21px; border-radius: 50%; background: var(--blue); color: #fff; font-size: .7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: .3rem; flex-shrink: 0; }
 .key-box { background: #ece9e4; border-radius: 8px; padding: .95rem 1.25rem; font-size: .93rem; color: var(--text); line-height: 1.75; border-left: 3px solid var(--blue); }
 
+/* ablation delta grid */
+.abl-ctrl { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.abl-ctrl label { font-size: .85rem; font-weight: 500; color: var(--text2); }
+.abl-nl-btn {
+  padding: .28rem .75rem; border: 1.5px solid var(--border); border-radius: 5px;
+  background: var(--bg); font-family: 'JetBrains Mono', monospace; font-size: .82rem;
+  cursor: pointer; transition: all .15s; color: var(--text2);
+}
+.abl-nl-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+.abl-nl-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+.abl-grid-wrap { overflow-x: auto; }
+.abl-grid { border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: .72rem; }
+.abl-grid th {
+  padding: .3rem .5rem; font-weight: 500; color: #888; font-size: .7rem;
+  text-align: center; white-space: nowrap;
+}
+.abl-grid td {
+  width: 58px; height: 28px; text-align: center; vertical-align: middle;
+  border: 1px solid #e8e4de; border-radius: 3px; font-size: .7rem;
+  transition: background .25s, color .25s, border-color .25s;
+  padding: 0 .3rem;
+}
+.abl-cell-gray   { background: #f0f0f0; border-color: #bbb; color: #888; }
+.abl-cell-orange { background: #fff3e8; border-color: #d4740a; color: #7a4500; }
+.abl-cell-blue   { background: #eef2fd; border-color: #0a3080; color: #0a3080; font-weight: 600; }
+.abl-row-label { color: #666; font-size: .75rem; padding-right: .6rem; text-align: right; white-space: nowrap; }
+.abl-legend { display: flex; gap: 1.2rem; margin-top: .9rem; flex-wrap: wrap; }
+.abl-legend-item { display: flex; align-items: center; gap: .35rem; font-size: .75rem; color: var(--text2); }
+.abl-legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid; flex-shrink: 0; }
+
+/* mini phase panel grid */
+.mini-grid { display: grid; gap: 4px; }
+.mini-cell { position: relative; }
+.mini-cell canvas { display: block; width: 100%; border-radius: 0; }
+.mini-delta {
+  position: absolute; bottom: 2px; right: 3px;
+  font-family: 'JetBrains Mono', monospace; font-size: .58rem; font-weight: 600;
+  line-height: 1; pointer-events: none;
+}
+.mini-delta.d-gray   { color: #999; }
+.mini-delta.d-orange { color: #d4740a; }
+.mini-delta.d-blue   { color: #0a3080; }
+.mini-col-label { font-size: .75rem; color: #888; text-align: center; font-family: 'Times New Roman', serif; padding-bottom: 3px; white-space: nowrap; }
+.mini-row-label { font-size: .75rem; color: #888; font-family: 'Times New Roman', serif; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; white-space: nowrap; }
+.mini-corner { font-size: .68rem; color: #aaa; font-family: 'Inter', sans-serif; display: flex; align-items: flex-end; justify-content: flex-end; padding-right: 5px; padding-bottom: 3px; line-height: 1.2; text-align: right; }
+
 pre {
   background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
   padding: 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: .82rem;
@@ -166,6 +213,7 @@ pre {
       <li><a href="#ema">phase transition</a></li>
       <li><a href="#phase">arbitration</a></li>
       <li><a href="#ablation">ema ablation</a></li>
+      <li><a href="#robustness-panels">robustness</a></li>
       <li><a href="#citation">cite</a></li>
     </ul>
     <div class="nav-logos">
@@ -190,7 +238,7 @@ pre {
     </a>
   </div>
   <div class="story">
-    <p class="story-q">how do competing control strategies emerge, compete, and get resolved during learning?</p>
+    <p class="story-q">how do competing control strategies emerge and get resolved during learning?</p>
     <div class="story-steps">
       <div class="sstep">
         <span class="snum">1</span>
@@ -239,7 +287,7 @@ pre {
   <div class="canvas-wrap">
     <canvas id="ema-canvas" height="300"></canvas>
   </div>
-  <p style="font-size:.78rem;color:#aaa;margin-top:.5rem;text-align:right">note: interpretation is based on the analytical model, not the raw experimental curves</p>
+  <p style="font-size:.78rem;color:#aaa;margin-top:.5rem;text-align:right">interpretation is based on the analytical model, not the raw experimental curves</p>
   <div class="legend">
     <div class="legend-item">
       <svg width="22" height="3"><line x1="0" y1="1.5" x2="22" y2="1.5" stroke="#0a3080" stroke-width="2.5"/></svg>
@@ -275,13 +323,13 @@ pre {
   <div class="canvas-wrap">
     <canvas id="phase-canvas" style="height:320px"></canvas>
   </div>
-  <p style="font-size:.78rem;color:#aaa;margin-top:.5rem;text-align:right">colorbar scale is global across all k — direct comparison is valid</p>
+  <p style="font-size:.78rem;color:#aaa;margin-top:.5rem;text-align:right">colorbar scale is global across all k. direct comparison is valid</p>
 </div>
 
 <!-- EMA ABLATION -->
 <div class="card reveal" id="ablation">
   <h2>ema ablation — why not just use ema?</h2>
-  <p>because ema is blind to task demand. temporal integration alone cannot arbitrate: ema confidence is a function of slot delta norms only — task demand is invisible to it. the result is Δ = 0.0006 versus Δ = 0.192 for the attention gate. ema is useful as a diagnostic model of commitment dynamics, but it cannot implement the arbitration itself. attention is the mechanism that works, and crucially it scales: Δ grows monotonically with k up to saturation at k ≥ 64, consistent with the scaling behaviour observed in transformer-based systems.</p>
+  <p>because ema is blind to task demand. temporal integration alone cannot arbitrate: ema confidence is a function of slot delta norms only. task demand is invisible to it. the result is Δ = 0.0006 versus Δ = 0.192 for the attention gate. ema is useful as a diagnostic model of commitment dynamics, but it cannot implement the arbitration itself. attention is the mechanism that works, and crucially it scales: Δ grows monotonically with k up to saturation at k ≥ 64, consistent with the scaling behaviour observed in transformer-based systems.</p>
   <div class="compare">
     <div class="c-panel">
       <canvas id="cmp-gate" height="220"></canvas>
@@ -289,9 +337,45 @@ pre {
     </div>
     <div class="c-panel">
       <canvas id="cmp-ema" height="220"></canvas>
-      <div class="cap"><strong>EMA ablation (α = 1/k)</strong><br>Δ = 0.0006 · uniform — task demand invisible</div>
+      <div class="cap"><strong>EMA ablation (α = 1/k)</strong><br>Δ = 0.0006 · uniform. task demand invisible</div>
     </div>
   </div>
+</div>
+
+<!-- ROBUSTNESS — PHASE PANELS -->
+<div class="card reveal" id="robustness-panels">
+  <h2>robustness</h2>
+  <p style="color:#aaa;font-size:.88rem;margin-bottom:.4rem">select depth to compare. each cell is a phase diagram for a given (k, ED) pair.</p>
+  <p>k-threshold remains stable across all tested settings. capacity and depth mainly affect the strength of arbitration, not its emergence. NL = 1 is sufficient for emergence; NL = 2 achieves sharper separation and, hence, optimal arbitration.</p>
+  <div class="abl-ctrl" style="margin-top:1rem">
+    <label>network depth</label>
+    <button class="k-btn active" data-nl="1" id="nl-btn-1">NL = 1</button>
+    <button class="k-btn optimal" data-nl="2" id="nl-btn-2">NL = 2</button>
+  </div>
+  <div style="display:flex;align-items:stretch;gap:1rem">
+    <div style="overflow-x:auto;flex:1">
+      <div id="mini-grid-wrap"></div>
+    </div>
+    <div style="display:flex;flex-direction:row;align-items:stretch;gap:4px;flex-shrink:0;padding-top:22px;padding-bottom:4px">
+      <div style="width:11px;border-radius:0;background:linear-gradient(to bottom,rgb(10,48,128),rgb(255,255,255),rgb(170,170,170));border:1px solid #ccc"></div>
+      <div style="display:flex;flex-direction:column;justify-content:space-between">
+        <span style="font-size:.68rem;color:#666;font-family:'Inter',sans-serif">Prospective</span>
+        <span style="font-size:.68rem;color:#666;font-family:'Inter',sans-serif">Reactive</span>
+      </div>
+    </div>
+  </div>
+  <div class="abl-legend" style="margin-top:.8rem">
+    <div class="abl-legend-item">
+      <div class="abl-legend-swatch" style="background:#f0f0f0;border-color:#bbb"></div>dead · Δ ≤ 0.03
+    </div>
+    <div class="abl-legend-item">
+      <div class="abl-legend-swatch" style="background:#fff3e8;border-color:#d4740a"></div>emerging · Δ ∈ (0.03, 0.15]
+    </div>
+    <div class="abl-legend-item">
+      <div class="abl-legend-swatch" style="background:#eef2fd;border-color:#0a3080"></div>resolved · Δ > 0.15
+    </div>
+  </div>
+  <p style="font-size:.78rem;color:#aaa;margin-top:.5rem;text-align:right">colorbar scale is global across all NL. direct comparison is valid</p>
 </div>
 
 <!-- SUMMARY -->
@@ -326,6 +410,8 @@ pre {
 <!-- lightbox -->
 <div class="overlay" id="overlay"><img id="overlay-img" src="" alt=""></div>
 
+<script src="assets/abl_data.js"></script>
+<script src="assets/abl_phases.js"></script>
 <script src="assets/web_data.js"></script>
 <script>
 // ── colormap: gray → white → blue ─────────────────────────────────────────────
@@ -644,6 +730,9 @@ function init() {
   // phase: start at k=1
   document.querySelector('#k-btns [data-k="1"]').click();
 
+  // robustness mini grid
+  buildMiniGrid(1);
+
   // comparison panels
   const d32 = PHASE_DATA['32'];
   renderComparePhase('cmp-gate', d32.matrix, d32.td_values, d32.n_epochs, d32.warm_ep);
@@ -667,6 +756,150 @@ window.addEventListener('resize', () => {
     const flat = d32.td_values.map(()=>Array(d32.n_epochs).fill(0.501));
     renderComparePhase('cmp-ema', flat, d32.td_values, d32.n_epochs, d32.warm_ep);
   }
+});
+
+// ── mini phase panels ─────────────────────────────────────────────────────────
+function renderMiniCanvas(canvas, matrix) {
+  const DPR = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth || 88;
+  const cssH = canvas.clientHeight || 52;
+  const W = Math.round(cssW * DPR);
+  const H = Math.round(cssH * DPR);
+  if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+  const ctx = canvas.getContext('2d');
+  const nTd = matrix.length;
+  const nEp = matrix[0]?.length || 1;
+  const img = ctx.createImageData(W, H);
+  for (let py = 0; py < H; py++) {
+    const rowF = (py / H) * nTd;
+    const r0 = Math.min(Math.floor(rowF), nTd - 1);
+    const r1 = Math.min(r0 + 1, nTd - 1);
+    const ra = rowF - r0;
+    for (let px = 0; px < W; px++) {
+      const ei = Math.round((px / W) * (nEp - 1));
+      const v0 = matrix[r0]?.[ei] ?? 0.5;
+      const v1 = matrix[r1]?.[ei] ?? 0.5;
+      const [r,g,b] = colormapRGB(v0*(1-ra) + v1*ra);
+      const base = (py*W+px)*4;
+      img.data[base]=r; img.data[base+1]=g; img.data[base+2]=b; img.data[base+3]=255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function buildMiniGrid(nl) {
+  const src  = nl === 1 ? ABL_PHASES.nl1 : ABL_PHASES.nl2;
+  const dAbl = nl === 1 ? ABL_DATA.nl1   : ABL_DATA.nl2;
+  const eds  = ABL_PHASES.ed_sweep;
+  const ks   = ABL_PHASES.k_sweep;
+  const CW = 88, CH = 52;  // CSS px per cell
+
+  // outer grid: (nK rows + 1 header) × (nED cols + 1 label col)
+  const wrap = document.getElementById('mini-grid-wrap');
+  wrap.innerHTML = '';
+  const totalCols = eds.length + 1;
+  const grid = document.createElement('div');
+  grid.className = 'mini-grid';
+  grid.style.gridTemplateColumns = `36px repeat(${eds.length}, ${CW}px)`;
+
+  // header row — corner shows axis legend, columns show ED numbers only
+  const corner = document.createElement('div');
+  corner.className = 'mini-corner';
+  corner.innerHTML = 'k&nbsp;↓<br>ED&nbsp;→';
+  grid.appendChild(corner);
+  eds.forEach(ed => {
+    const h = document.createElement('div');
+    h.className = 'mini-col-label';
+    h.textContent = ed;
+    grid.appendChild(h);
+  });
+
+  // data rows — row labels show k numbers only
+  ks.forEach(k => {
+    const rl = document.createElement('div');
+    rl.className = 'mini-row-label';
+    rl.textContent = k;
+    grid.appendChild(rl);
+
+    eds.forEach(ed => {
+      const cell = document.createElement('div');
+      cell.className = 'mini-cell';
+      cell.style.width = CW + 'px';
+      cell.style.height = CH + 'px';
+
+      const cvs = document.createElement('canvas');
+      cvs.style.height = CH + 'px';
+      cell.appendChild(cvs);
+
+      const mat = src[String(ed)]?.[String(k)];
+      if (mat) {
+        requestAnimationFrame(() => renderMiniCanvas(cvs, mat));
+        const delta = dAbl[String(ed)]?.[String(k)];
+        if (delta !== null && delta !== undefined) {
+          const lbl = document.createElement('div');
+          lbl.className = 'mini-delta ' + (delta > 0.15 ? 'd-blue' : delta > 0.03 ? 'd-orange' : 'd-gray');
+          lbl.textContent = delta.toFixed(3);
+          cell.appendChild(lbl);
+        }
+      } else {
+        cell.style.background = '#f5f5f5';
+        cell.style.borderRadius = '3px';
+      }
+      grid.appendChild(cell);
+    });
+  });
+
+  wrap.appendChild(grid);
+}
+
+document.querySelectorAll('#nl-btn-1, #nl-btn-2').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#nl-btn-1, #nl-btn-2').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    buildMiniGrid(parseInt(btn.dataset.nl));
+  });
+});
+
+// ── ablation delta grid ───────────────────────────────────────────────────────
+function cellClass(delta) {
+  if (delta === null || delta === undefined) return 'abl-cell-gray';
+  if (delta > 0.15) return 'abl-cell-blue';
+  if (delta > 0.03) return 'abl-cell-orange';
+  return 'abl-cell-gray';
+}
+
+function renderAblGrid(nl) {
+  const table = document.getElementById('abl-table');
+  const data  = nl === 1 ? ABL_DATA.nl1 : ABL_DATA.nl2;
+  const eds   = ABL_DATA.ed_sweep;
+  const ks    = ABL_DATA.k_sweep;
+
+  // header row
+  let html = '<thead><tr><th></th>';
+  eds.forEach(ed => { html += `<th>ED=${ed}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  // data rows
+  ks.forEach(k => {
+    html += `<tr><td class="abl-row-label">k = ${k}</td>`;
+    eds.forEach(ed => {
+      const delta = data[String(ed)]?.[String(k)];
+      const cls   = cellClass(delta);
+      const label = delta !== null && delta !== undefined ? delta.toFixed(3) : '—';
+      html += `<td class="${cls}">${label}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+document.querySelectorAll('.abl-nl-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.abl-nl-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAblGrid(parseInt(btn.dataset.nl));
+  });
 });
 
 // ── scroll reveal ─────────────────────────────────────────────────────────────
