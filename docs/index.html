@@ -71,6 +71,10 @@ p:last-child { margin-bottom: 0; }
 .k-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
 .k-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
 .k-btn.optimal { position: relative; }
+.k-btn.secondary { border-color: #ddd; color: #bbb; }
+.k-btn.secondary:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+.k-btn.secondary.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.k-btn.disabled { border-color: #eee; color: #ddd; background: #fafafa; pointer-events: none; cursor: default; }
 .k-btn.optimal.active::after {
   content: '★'; position: absolute; top: -9px; right: -5px;
   font-size: .6rem; color: #e8a020; background: var(--card);
@@ -178,8 +182,8 @@ canvas { width: 100%; border-radius: 8px; display: block; background: #fff; }
 .mini-delta.d-gray   { color: #999; }
 .mini-delta.d-orange { color: #d4740a; }
 .mini-delta.d-blue   { color: #0a3080; }
-.mini-col-label { font-size: .75rem; color: #888; text-align: center; font-family: 'Times New Roman', serif; padding-bottom: 3px; white-space: nowrap; }
-.mini-row-label { font-size: .75rem; color: #888; font-family: 'Times New Roman', serif; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; white-space: nowrap; }
+.mini-col-label { font-size: .75rem; color: #888; text-align: center; font-family: 'JetBrains Mono', monospace; padding-bottom: 3px; white-space: nowrap; }
+.mini-row-label { font-size: .75rem; color: #888; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; justify-content: flex-end; padding-right: 5px; white-space: nowrap; }
 .mini-corner { font-size: .68rem; color: #aaa; font-family: 'Inter', sans-serif; display: flex; align-items: flex-end; justify-content: flex-end; padding-right: 5px; padding-bottom: 3px; line-height: 1.2; text-align: right; }
 
 pre {
@@ -238,7 +242,7 @@ pre {
     </a>
   </div>
   <div class="story">
-    <p class="story-q">how do competing control strategies emerge and get resolved during learning?</p>
+    <p class="story-q">how do control strategies form, compete, and get resolved through experience?</p>
     <div class="story-steps">
       <div class="sstep">
         <span class="snum">1</span>
@@ -250,7 +254,7 @@ pre {
       </div>
       <div class="sstep">
         <span class="snum">3</span>
-        <div><strong>one parameter decides.</strong> context window <em>k</em>, not network depth, determines whether the gate forms at all. below <em>k</em> ≤ 4 no arbitration emerges. above <em>k</em> ≥ 8, confidence scales as log <em>k</em>. the transition shows a clear two-phase structure: a dead zone, then an abrupt breakthrough.</div>
+        <div><strong>one parameter decides.</strong> context window <em>k</em>, not network depth, determines whether the gate forms at all. below <em>k</em> ≤ 4 no arbitration emerges. above <em>k</em> ≥ 8 the gate begins resolving, with full separation by k = 32. the transition shows a clear two-phase structure: a dead zone, then an abrupt breakthrough.</div>
       </div>
       <div class="sstep">
         <span class="snum">4</span>
@@ -329,7 +333,7 @@ pre {
 <!-- EMA ABLATION -->
 <div class="card reveal" id="ablation">
   <h2>ema ablation — why not just use ema?</h2>
-  <p>because ema is blind to task demand. temporal integration alone cannot arbitrate: ema confidence is a function of slot delta norms only. task demand is invisible to it. the result is Δ = 0.0006 versus Δ = 0.192 for the attention gate. ema is useful as a diagnostic model of commitment dynamics, but it cannot implement the arbitration itself. attention is the mechanism that works, and crucially it scales: Δ grows monotonically with k up to saturation at k ≥ 64, consistent with the scaling behaviour observed in transformer-based systems.</p>
+  <p>because ema is blind to task demand. temporal integration alone cannot arbitrate: ema lacks the state-dependent mechanism required for arbitration. task demand is invisible to it. the result is Δ = 0.0006 versus Δ = 0.192 for the attention gate. ema is useful as a diagnostic model of commitment dynamics, but it cannot implement the arbitration itself. the attention gate implements the state-dependent routing that ema cannot, and crucially it scales: Δ grows monotonically with k up to saturation at k ≥ 64, consistent with the scaling behaviour observed in transformer-based systems.</p>
   <div class="compare">
     <div class="c-panel">
       <canvas id="cmp-gate" height="220"></canvas>
@@ -345,12 +349,21 @@ pre {
 <!-- ROBUSTNESS — PHASE PANELS -->
 <div class="card reveal" id="robustness-panels">
   <h2>robustness</h2>
-  <p style="color:#aaa;font-size:.88rem;margin-bottom:.4rem">select depth to compare. each cell is a phase diagram for a given (k, ED) pair.</p>
-  <p>k-threshold remains stable across all tested settings. capacity and depth mainly affect the strength of arbitration, not its emergence. NL = 1 is sufficient for emergence; NL = 2 achieves sharper separation and, hence, optimal arbitration.</p>
+  <p style="color:#aaa;font-size:.88rem;margin-bottom:.4rem">select condition to compare. each cell is a phase diagram for a given (k, ED) pair.</p>
+  <p>the k-threshold remains stable across all tested settings. across network depth (NL ∈ {1, 2, 3}), NL = 1 is sufficient for emergence and NL = 2 achieves sharper separation. NL = 3 provides no clear arbitration gain. learning rate is the most sensitive hyperparameter: too low, the gate never forms; too high, the reactive strategy does not form at all and the prospective one fails to stabilise, with structure collapsing. the learning rate results are included for completeness. they confirm why the magnitude e-3 was selected. the threshold does not depend on it.</p>
   <div class="abl-ctrl" style="margin-top:1rem">
     <label>network depth</label>
-    <button class="k-btn active" data-nl="1" id="nl-btn-1">NL = 1</button>
-    <button class="k-btn optimal" data-nl="2" id="nl-btn-2">NL = 2</button>
+    <button class="k-btn secondary" data-key="nl1" id="nl-btn-1">NL = 1</button>
+    <button class="k-btn optimal active" data-key="nl2" id="nl-btn-2">NL = 2</button>
+    <button class="k-btn secondary" data-key="nl3" id="nl-btn-3">NL = 3</button>
+  </div>
+  <div class="abl-ctrl" style="margin-top:.6rem">
+    <label>learning rate</label>
+    <button class="k-btn secondary" data-key="lr2e6" id="lr-btn-1">e-6</button>
+    <button class="k-btn secondary" data-key="lr2e5" id="lr-btn-2">e-5</button>
+    <button class="k-btn secondary" data-key="lr2e4" id="lr-btn-3">e-4</button>
+    <button class="k-btn optimal" data-key="lr2e3" id="lr-btn-4">e-3</button>
+    <button class="k-btn secondary" data-key="lr2e2" id="lr-btn-5">e-2</button>
   </div>
   <div style="display:flex;align-items:stretch;gap:1rem">
     <div style="overflow-x:auto;flex:1">
@@ -364,18 +377,7 @@ pre {
       </div>
     </div>
   </div>
-  <div class="abl-legend" style="margin-top:.8rem">
-    <div class="abl-legend-item">
-      <div class="abl-legend-swatch" style="background:#f0f0f0;border-color:#bbb"></div>dead · Δ ≤ 0.03
-    </div>
-    <div class="abl-legend-item">
-      <div class="abl-legend-swatch" style="background:#fff3e8;border-color:#d4740a"></div>emerging · Δ ∈ (0.03, 0.15]
-    </div>
-    <div class="abl-legend-item">
-      <div class="abl-legend-swatch" style="background:#eef2fd;border-color:#0a3080"></div>resolved · Δ > 0.15
-    </div>
-  </div>
-  <p style="font-size:.78rem;color:#aaa;margin-top:.5rem;text-align:right">colorbar scale is global across all NL. direct comparison is valid</p>
+  <p style="font-size:.78rem;color:#aaa;margin-top:.5rem;text-align:right">colorbar scale is global across all conditions. direct comparison is valid</p>
 </div>
 
 <!-- SUMMARY -->
@@ -731,7 +733,7 @@ function init() {
   document.querySelector('#k-btns [data-k="1"]').click();
 
   // robustness mini grid
-  buildMiniGrid(1);
+  buildMiniGrid('nl2');
 
   // comparison panels
   const d32 = PHASE_DATA['32'];
@@ -787,9 +789,9 @@ function renderMiniCanvas(canvas, matrix) {
   ctx.putImageData(img, 0, 0);
 }
 
-function buildMiniGrid(nl) {
-  const src  = nl === 1 ? ABL_PHASES.nl1 : ABL_PHASES.nl2;
-  const dAbl = nl === 1 ? ABL_DATA.nl1   : ABL_DATA.nl2;
+function buildMiniGrid(key) {
+  const src  = ABL_PHASES[key];
+  const dAbl = ABL_DATA[key];
   const eds  = ABL_PHASES.ed_sweep;
   const ks   = ABL_PHASES.k_sweep;
   const CW = 88, CH = 52;  // CSS px per cell
@@ -852,13 +854,49 @@ function buildMiniGrid(nl) {
   wrap.appendChild(grid);
 }
 
-document.querySelectorAll('#nl-btn-1, #nl-btn-2').forEach(btn => {
+const nlBtns = document.querySelectorAll('#nl-btn-1, #nl-btn-2, #nl-btn-3');
+const lrBtns = document.querySelectorAll('#lr-btn-1, #lr-btn-2, #lr-btn-3, #lr-btn-4, #lr-btn-5');
+const lrOptimal = document.getElementById('lr-btn-4');
+
+function setLrEnabled(enabled) {
+  lrBtns.forEach(b => {
+    if (enabled) {
+      b.classList.remove('disabled');
+      if (b.id !== 'lr-btn-4') b.classList.add('secondary');
+    } else {
+      b.classList.remove('active', 'secondary');
+      b.classList.add('disabled');
+    }
+  });
+}
+
+nlBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('#nl-btn-1, #nl-btn-2').forEach(b => b.classList.remove('active'));
+    nlBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    buildMiniGrid(parseInt(btn.dataset.nl));
+    if (btn.dataset.key === 'nl2') {
+      setLrEnabled(true);
+      lrBtns.forEach(b => b.classList.remove('active'));
+      lrOptimal.classList.add('active');
+      buildMiniGrid('lr2e3');
+    } else {
+      setLrEnabled(false);
+      buildMiniGrid(btn.dataset.key);
+    }
   });
 });
+
+lrBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    lrBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    buildMiniGrid(btn.dataset.key);
+  });
+});
+
+// init: NL=2 active, LR enabled at e-3
+setLrEnabled(true);
+lrOptimal.classList.add('active');
 
 // ── ablation delta grid ───────────────────────────────────────────────────────
 function cellClass(delta) {
